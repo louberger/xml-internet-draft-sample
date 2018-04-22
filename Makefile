@@ -11,4 +11,6 @@ include Makefile.common
 # rmid	- undo 'make id' (including git add)
 # trees	- update .tree versions of modules mentioned in draft
 # <DRAFT>.{xml,txt,html,raw} - update version of draft indicated by extension
+# checkyang	- check draft YANG models using pyang
+# yangbase	- put or update standard yang models in ~/.yang
 # vars 	- for testing, shows some internal variables

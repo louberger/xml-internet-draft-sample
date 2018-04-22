@@ -7,12 +7,21 @@
 #DRAFT
 
 SHELL   = bash
+
+#YANG related variables
 MODELS := $(shell awk '/^<CODE BEGINS>/{print gensub(/\"/,"","g",gensub(/@.*/,".yang",1,$$4))}' $(DRAFT).xml)
-#assumes standard yang modules installed in ../yang, customize as needed
+TREES := $(MODELS:.yang=.tree)
+
+#assumes standard yang modules installed in ~/.yang, ../yang or ../../yang, customize as needed
 #  e.g., based on a 'cd .. ; git clone https://github.com/YangModels/yang.git'
-YANGIMPORT_BASE := $(shell if [ -e ../yang ] ; then echo ../yang ; else if [ -e ../../yang ] ; then echo ../../yang ; else echo YANG_IMPORT_NOT_FOUND ; fi ; fi)
-PLUGPATH    := $(shell echo `find . $(YANGIMPORT_BASE) -name \*.yang | sed 's,/[a-z0-9A-Z@_\-]*.yang$$,,' | uniq` | tr \  :)
-PYTHONPATH  := $(shell echo `find /usr/lib* /usr/local/lib* -name  site-packages ` | tr \  :)
+YANG_REPO        = https://github.com/YangModels/yang.git
+YANG_DEFAULT_DIR = ~/.yang
+YANGIMPORT_BASE := $(shell if [ -e ../yang ] ; then echo ../yang/ ; else if [ -e ../../yang/ ] ; then echo ../../yang/ ; else if [ -e $(YANG_DEFAULT_DIR) ] ; then echo $(YANG_DEFAULT_DIR)/; else echo YANG_IMPORT_NOT_FOUND ; fi ; fi ; fi)
+PLUGPATH         = $(shell echo `find . $(YANGIMPORT_BASE) -name '[a-z]*.yang' | sed 's,/[a-z0-9A-Z@_\-]*.yang$$,,' | uniq | grep -v vendor` | tr \  :)
+PYTHONPATH      := $(shell echo `find /usr/lib* /usr/local/lib* -name  site-packages | tail -1 ` | tr \  :)
+DATE		:= $(shell date +%F)
+
+#I-D related
 WITHXML2RFC := $(shell which xml2rfc > /dev/null 2>&1 ; echo $$? )
 
 ID_DIR	     = IDs
@@ -23,13 +32,15 @@ REV	    := $(word 2, $(REVS))
 OLD          = $(ID_DIR)/$(DRAFT)-$(PREV_REV)
 NEW          = $(ID_DIR)/$(DRAFT)-$(REV)
 
-TREES := $(MODELS:.yang=.tree)
-
 %.tree: %.yang
-	@echo Updating $< revision date
-	@rm -f $<.prev; cp -pf $< $<.prev
-	@sed 's/revision.\(\|\"\)[0-9]*\-[0-9]*\-[0-9]*\(\|\"\)/revision \1'`date +%F`'\2/' < $<.prev > $<
-	@diff $<.prev $< || exit 0
+	@if grep -q '^ *revision *$(DATE)' $< ; then \
+		echo $< revision is up to date ; \
+	else \
+		echo Updating $< revision date ; \
+		rm -f $<.prev; cp -pf $< $<.prev ; \
+		sed 's/revision.\(\|\"\)[0-9]*\-[0-9]*\-[0-9]*\(\|\"\)/revision \1'$(DATE)'\2/' < $<.prev > $< ; \
+		diff $<.prev $< || exit 0 ; \
+	fi
 	@echo Generating $@	
 	@PYTHONPATH=$(PYTHONPATH) pyang --ietf -f tree --tree-line-length 76 -p $(PLUGPATH) $< > $@  || exit 0
 
@@ -56,27 +67,52 @@ TREES := $(MODELS:.yang=.tree)
 		xml2rfc --raw $< -o $@	; \
 	fi
 
-all:	$(YANGIMPORT_BASE) $(TREES) $(DRAFT).txt $(DRAFT).html $(DRAFT).raw
+all:	$(YANGIMPORT_BASE) $(TREES) xml2rfc $(DRAFT).txt $(DRAFT).html $(DRAFT).raw
 
 $(YANGIMPORT_BASE):
 	@if [ "$(MODELS)" != "" ] ; then \
-		echo "Unable to find Standard YANG modules in parent dirs"; \
-		echo "to fix type:"; \
-		echo "  (cd .. ; git clone https://github.com/YangModels/yang.git)"; \
+		echo "Unable to find Standard YANG modules."; \
+		echo "To fix and create $(YANG_DEFAULT_DIR), type 'make yangbase'"; \
 		exit 1 ; \
 	fi
 
-vars:
-	which xml2rfc
-	@echo WITHXML2RFC=$(WITHXML2RFC)
+checkyang:	$(YANGIMPORT_BASE)
+	@if [ "$(MODELS)" != "" ] ; then \
+		for f in $(MODELS); do \
+			echo "Checking $$f" ; \
+			PYTHONPATH=$(PYTHONPATH) pyang --verbose -p $(PLUGPATH) $$f ; \
+		done ; \
+	fi
+
+yangbase:
+	@if [ "$(YANGIMPORT_BASE)" == "YANG_IMPORT_NOT_FOUND" ] ; then \
+		echo "Creating $(YANG_DEFAULT_DIR) from $(YANG_REPO)" ; \
+		git clone $(YANG_REPO) $(YANG_DEFAULT_DIR) ; \
+		echo "Modules can be updated via 'make yangbase' in the future." ; \
+	else \
+		(cd $(YANGIMPORT_BASE) ; git pull) ; \
+	fi
+
+trees: $(TREES)
+
+vars:	$(YANGIMPORT_BASE)
 	@echo PYTHONPATH=$(PYTHONPATH)
 	@echo PLUGPATH=$(PLUGPATH)
 	@echo YANGIMPORT_BASE=$(YANGIMPORT_BASE)
 	@echo MODELS=$(MODELS)
 	@echo TREES=$(TREES)
+	@echo DATE=$(DATE)
+	@which xml2rfc
+	@echo WITHXML2RFC=$(WITHXML2RFC)
 	@echo PREV_REV=$(PREV_REV)
 	@echo REV=$(REV)
 	@echo OLD=$(OLD)
+
+xml2rfc:
+	@if [ $(WITHXML2RFC) != 0 ] ; then 	\
+		echo "$@ not found, please run 'pip install $@'" ; \
+		exit 1 ; \
+	fi
 
 $(DRAFT).xml: $(YANGIMPORT_BASE) $(MODELS)
 	@rm -f $@.prev; cp -p $@ $@.prev
@@ -146,4 +182,3 @@ rmid:
 	@rm -f $(NEW).xml $(NEW).txt $(NEW).html
 	@git rm  $(NEW).xml $(NEW).txt $(NEW).html
 
-trees: $(TREES)
