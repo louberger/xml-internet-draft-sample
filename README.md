@@ -22,7 +22,37 @@ Contributions.
 
 # Internet-Draft-Sample Repo
 
-This is an example repo for internet-drafts.  It assumes a single file named "draft<whatever>.xml".  If you want to use this for your draft, fork/copy the repo, remove *.xml and *.yang and drop in your own draft<XXX>.xml, and .yang files if you have them.  Take a look at the Makefile to see available targets.
+The template does the following things:
+
+1. provides a makefile that supports make targets:
+   - all	- Update trees mentioned in draft, <DRAFT>.{xml,txt,html,raw}
+     Note that as part of generating the formatted versions from xml, it
+     automatically updates the local xml file based on included YANG
+     models (see below.)
+   - idnits - Update <DRAFT>.txt, check it with idnits
+   - id	- create the -<rev> version of I-D in "IDs" subdirectory,
+     also add to git. The version in the docName within
+     the xml file is used for the version number; it should be updated
+     after the ID version is uploaded to the IETF.
+   - rmid	- undo 'make id' (including git add)
+   - trees	- update .tree versions of modules mentioned in draft
+   - "DRAFT".{xml,txt,html,raw} - update version of draft indicated by extension
+   - checkyang	- check draft YANG models using pyang
+   - yangbase	- put or update standard yang models in ~/.yang
+   - vars 	- for testing, shows some internal variables
+
+2. adds support for travis validation of pushes/PRs -- it does a make
+   idnits and reports xml or idnits errors -- see
+   https://travis-ci.org/louberger/xml-internet-draft-sample for an
+   example run
+
+3. Adds a project README.md (this file) with IETF note well and links to
+   - online generation of text and html versions of
+     draft xml available in repo master branch using xml2rfc
+   - online generation of idnits from master
+   - travis results
+
+This is an example repo for internet-drafts.  It assumes a single file named "draft<whatever>.xml".  If you want to use this for your draft, fork/copy the repo, remove *.xml and *.yang and drop in your own draft<XXX>.xml, and .yang files if you have them.
 
 Caution: if you are using YANG, the makefile will automatically update the xml based on yang module file changes, but you MUST use the following format for noting the yang in your xml file:
 ```
