@@ -70,6 +70,6 @@ If you configure travis, it will automatically run 'make targets' and provie res
 * For details see: https://travis-ci.org/louberger/xml-internet-draft-sample
 * For results on past commits see: https://travis-ci.org/louberger/xml-internet-draft-sample/builds
 
-## Fomatted versions: [text](https://xml2rfc.tools.ietf.org/cgi-bin/xml2rfc.cgi?url=https://raw.githubusercontent.com/louberger/xml-internet-draft-sample/master/draft-berger-xml-sample-repo.xml) or  [html](https://xml2rfc.tools.ietf.org/cgi-bin/xml2rfc.cgi?url=https://raw.githubusercontent.com/louberger/xml-internet-draft-sample/master/draft-berger-xml-sample-repo.xml&modeAsFormat=html%2Fascii)
+## Formatted versions: [text](https://xml2rfc.tools.ietf.org/cgi-bin/xml2rfc.cgi?url=https://raw.githubusercontent.com/louberger/xml-internet-draft-sample/master/draft-berger-xml-sample-repo.xml) or  [html](https://xml2rfc.tools.ietf.org/cgi-bin/xml2rfc.cgi?url=https://raw.githubusercontent.com/louberger/xml-internet-draft-sample/master/draft-berger-xml-sample-repo.xml&modeAsFormat=html%2Fascii)
 
 ## idnits: [results](https://tools.ietf.org/idnits?url=https://xml2rfc.tools.ietf.org/cgi-bin/xml2rfc.cgi?url=https://raw.githubusercontent.com/louberger/xml-internet-draft-sample/master/draft-berger-xml-sample-repo.xml&modeAsFormat=html%2Fascii)
