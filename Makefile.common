@@ -26,11 +26,12 @@ WITHXML2RFC := $(shell which xml2rfc > /dev/null 2>&1 ; echo $$? )
 
 ID_DIR	     = IDs
 REVS	    := $(shell grep docName $(DRAFT).xml | tr '"\->' '   ' | \
-		 awk '{printf "%02d %02d",$$NF-1,$$NF}')
+		 strings | awk '{printf "%02d %02d",$$NF-1,$$NF}')
 PREV_REV    := $(word 1, $(REVS))
 REV	    := $(word 2, $(REVS))
-OLD          = $(ID_DIR)/$(DRAFT)-$(PREV_REV)
-NEW          = $(ID_DIR)/$(DRAFT)-$(REV)
+DRAFT_ROOT  := $(DRAFT:%-$(REV)=%)
+OLD          = $(ID_DIR)/$(DRAFT_ROOT)-$(PREV_REV)
+NEW          = $(ID_DIR)/$(DRAFT_ROOT)-$(REV)
 
 %.tree: %.yang
 	@if grep -q '^ *revision *$(DATE)' $< ; then \
@@ -104,6 +105,9 @@ vars:	$(YANGIMPORT_BASE)
 	@echo DATE=$(DATE)
 	@which xml2rfc
 	@echo WITHXML2RFC=$(WITHXML2RFC)
+	@echo DRAFT=$(DRAFT)
+	@echo DRAFT_ROOT=$(DRAFT_ROOT)
+	@echo REVS=$(REVS)
 	@echo PREV_REV=$(PREV_REV)
 	@echo REV=$(REV)
 	@echo OLD=$(OLD)
@@ -133,7 +137,6 @@ $(DRAFT).xml: $(YANGIMPORT_BASE) $(MODELS)
 		rm -f $@.tmp 		 				; \
 	fi ; done
 	diff -bw $@.prev $@ || exit 0
-
 
 $(DRAFT)-diff.txt: $(DRAFT).txt 
 	@echo "Generating diff of $(OLD).txt and $(DRAFT).txt > $@..."
@@ -181,4 +184,12 @@ rmid:
 	@read t
 	@rm -f $(NEW).xml $(NEW).txt $(NEW).html
 	@git rm  $(NEW).xml $(NEW).txt $(NEW).html
+
+travis: idnits
+	@cat $(DRAFT).txt
+	@if [ -f "$(OLD).txt" ] ; then \
+	    diff -bw "$(OLD).txt" $(DRAFT).txt || true ;\
+	fi
+
+#end
 
